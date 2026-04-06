@@ -30,7 +30,7 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
 .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
 
 .dow-row {
-  display: grid; grid-template-columns: repeat(7, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: #f8f9fa; border-bottom: 2px solid #dee2e6;
 }
 .dow-cell {
@@ -40,7 +40,7 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
 .dow-cell.sun { color: #d32f2f; }
 
 .cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   gap: 1px; background: #dee2e6; padding: 1px;
 }
 
@@ -50,7 +50,6 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
 }
 .day-cell.empty { background: #f5f5f5; min-height: 40px; }
 .day-cell.sat-bg { background: #f0f4ff; }
-.day-cell.sun-bg { background: #fff5f5; }
 
 .day-num-row {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -61,7 +60,6 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
   text-align: center; flex-shrink: 0;
 }
 .day-cell.sat-bg .day-num { color: #1976D2; }
-.day-cell.sun-bg .day-num { color: #d32f2f; }
 
 .day-event {
   font-size: 0.6em; color: #e65100; font-weight: 600;
@@ -122,7 +120,6 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
 <div class="dow-row">
   <div class="dow-cell">月</div><div class="dow-cell">火</div><div class="dow-cell">水</div>
   <div class="dow-cell">木</div><div class="dow-cell">金</div><div class="dow-cell sat">土</div>
-  <div class="dow-cell sun">日</div>
 </div>
 
 <div id="calGrid" class="cal-grid">
@@ -154,12 +151,15 @@ function buildCalendar(data) {
     return;
   }
   let html = '';
-  for (let i = 0; i < data.startDow; i++) html += '<div class="day-cell empty"></div>';
+  // startDow: Mon=0..Sun=6, skip Sunday columns
+  const startCol = data.startDow >= 6 ? 0 : data.startDow; // Sun wraps to 0 empty cells
+  for (let i = 0; i < startCol; i++) html += '<div class="day-cell empty"></div>';
 
   for (let d = 1; d <= data.daysInMonth; d++) {
-    const idx = data.days.indexOf(d);
     const dowIdx = (data.startDow + d - 1) % 7;
-    const bgClass = dowIdx === 6 ? 'sun-bg' : dowIdx === 5 ? 'sat-bg' : '';
+    if (dowIdx === 6) continue; // skip Sunday
+    const idx = data.days.indexOf(d);
+    const bgClass = dowIdx === 5 ? 'sat-bg' : '';
     const ev = idx >= 0 ? data.events[idx] : '';
 
     const late = [], off = [], sat = [];
@@ -193,8 +193,11 @@ function buildCalendar(data) {
     html += '</div></div>';
   }
 
-  const total = data.startDow + data.daysInMonth;
-  for (let i = 0; i < (7 - total % 7) % 7; i++) html += '<div class="day-cell empty"></div>';
+  // Fill remaining cells in last row (6-column grid)
+  const cells = document.createElement('div');
+  cells.innerHTML = html;
+  const count = cells.querySelectorAll('.day-cell').length;
+  for (let i = 0; i < (6 - count % 6) % 6; i++) html += '<div class="day-cell empty"></div>';
   grid.innerHTML = html;
 }
 
