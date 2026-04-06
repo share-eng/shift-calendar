@@ -2,117 +2,181 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>シフトカレンダー</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; }
+:root {
+  --system-bg: #f2f2f7;
+  --card-bg: #ffffff;
+  --separator: rgba(60, 60, 67, 0.12);
+  --label-primary: #000000;
+  --label-secondary: rgba(60, 60, 67, 0.6);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+  --tint: #007aff;
+  --sat-color: #007aff;
+  --late-bg: #fff3e0; --late-fg: #c77800; --late-border: #f5c882;
+  --off-bg: #fce8ec;  --off-fg: #c5294a;  --off-border: #f0a0b0;
+  --sat-bg: #f0e8f7;  --sat-fg: #7b3dab;  --sat-border: #cda8e8;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --system-bg: #000000;
+    --card-bg: #1c1c1e;
+    --separator: rgba(84, 84, 88, 0.65);
+    --label-primary: #ffffff;
+    --label-secondary: rgba(235, 235, 245, 0.6);
+    --label-tertiary: rgba(235, 235, 245, 0.3);
+    --tint: #0a84ff;
+    --sat-color: #0a84ff;
+    --late-bg: #3a2a00; --late-fg: #ffb340; --late-border: #5a4000;
+    --off-bg: #3a0a15;  --off-fg: #ff6b8a;  --off-border: #5a1a2a;
+    --sat-bg: #2a1540;  --sat-fg: #c8a0f0;  --sat-border: #4a2a6a;
+  }
+}
 
-.header {
-  background: linear-gradient(135deg, #2c3e50, #3498db);
-  color: white; padding: 14px 16px;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, 'SF Pro Text', 'Hiragino Sans', sans-serif;
+  background: var(--system-bg); color: var(--label-primary);
+  -webkit-font-smoothing: antialiased;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Navigation Bar */
+.navbar {
+  background: var(--card-bg);
+  border-bottom: 0.5px solid var(--separator);
+  padding: 12px 16px;
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 100;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,0.85);
 }
-.header h1 { font-size: 1.2em; font-weight: 600; }
-
+@media (prefers-color-scheme: dark) {
+  .navbar { background: rgba(28,28,30,0.85); }
+}
+.navbar-title {
+  font-size: 17px; font-weight: 600; letter-spacing: -0.4px;
+}
 .month-select {
-  padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.15); color: white; font-size: 0.95em; cursor: pointer;
+  font-family: inherit; font-size: 15px; font-weight: 500;
+  color: var(--tint); background: transparent;
+  border: none; cursor: pointer;
+  padding: 8px 4px;
+  -webkit-appearance: none; appearance: none;
+  min-height: 44px;
 }
-.month-select option { color: #333; background: white; }
+.month-select option { color: var(--label-primary); background: var(--card-bg); }
 
+/* Legend */
 .legend {
-  display: flex; gap: 10px; font-size: 0.75em; padding: 6px 16px;
-  background: white; border-bottom: 1px solid #e0e0e0;
+  display: flex; gap: 16px; padding: 8px 16px;
+  font-size: 12px; color: var(--label-secondary);
+  background: var(--system-bg);
 }
-.legend-item { display: flex; align-items: center; gap: 4px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
+/* Day of week header */
 .dow-row {
   display: grid; grid-template-columns: repeat(6, 1fr);
-  background: #f8f9fa; border-bottom: 2px solid #dee2e6;
+  background: var(--system-bg);
+  padding: 6px 0;
 }
 .dow-cell {
-  text-align: center; padding: 8px 0; font-weight: 700; font-size: 0.85em; color: #555;
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: var(--label-secondary); text-transform: uppercase;
 }
-.dow-cell.sat { color: #1976D2; }
-.dow-cell.sun { color: #d32f2f; }
+.dow-cell.sat { color: var(--sat-color); }
 
+/* Calendar Grid */
 .cal-grid {
   display: grid; grid-template-columns: repeat(6, 1fr);
-  gap: 1px; background: #dee2e6; padding: 1px;
+  gap: 0.5px; background: var(--separator);
+  margin: 0;
 }
 
 .day-cell {
-  background: white; min-height: 120px; padding: 4px 5px;
-  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--card-bg); min-height: 110px; padding: 6px;
+  display: flex; flex-direction: column;
 }
-.day-cell.empty { background: #f5f5f5; min-height: 40px; }
-.day-cell.sat-bg { background: #f0f4ff; }
+.day-cell.empty { background: var(--system-bg); min-height: 30px; }
+.day-cell.sat-bg { background: rgba(0, 122, 255, 0.04); }
+@media (prefers-color-scheme: dark) {
+  .day-cell.sat-bg { background: rgba(10, 132, 255, 0.08); }
+}
 
-.day-num-row {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 2px; gap: 2px;
-}
+/* Day number */
 .day-num {
-  font-size: 1.1em; font-weight: 800; min-width: 24px;
-  text-align: center; flex-shrink: 0;
+  font-size: 16px; font-weight: 400; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; margin-bottom: 2px;
+  color: var(--label-primary);
+  font-variant-numeric: tabular-nums;
 }
-.day-cell.sat-bg .day-num { color: #1976D2; }
+.day-cell.sat-bg .day-num { color: var(--sat-color); }
 
+/* Event */
 .day-event {
-  font-size: 0.6em; color: #e65100; font-weight: 600;
-  background: #fff3e0; padding: 1px 4px; border-radius: 3px;
-  line-height: 1.3; word-break: break-all;
+  font-size: 10px; font-weight: 500; color: var(--late-fg);
+  line-height: 1.4; margin-bottom: 3px; word-break: break-all;
 }
 
-.day-content { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
-
-.section-label {
-  font-size: 0.55em; font-weight: 700; color: #aaa; letter-spacing: 0.05em;
-  margin-top: 2px;
+/* Content area */
+.day-content {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
 }
 
+/* Person tags - pill style */
 .person-tag {
-  display: inline-block; padding: 0px 4px; border-radius: 3px;
-  font-size: 0.65em; font-weight: 500; line-height: 1.6; white-space: nowrap;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px; font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
 }
+.tag-late { background: var(--late-bg); color: var(--late-fg); }
+.tag-off  { background: var(--off-bg);  color: var(--off-fg); }
+.tag-sat  { background: var(--sat-bg);  color: var(--sat-fg); }
 
-.tag-late { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-.tag-off { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
-.tag-sat { background: #f3e5f5; color: #6a1b9a; border: 1px solid #ce93d8; }
-
+/* Empty state */
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 60px 20px; color: #999; grid-column: 1 / -1;
+  padding: 80px 20px; color: var(--label-tertiary); grid-column: 1 / -1;
 }
-.empty-state p { font-size: 1em; margin-top: 12px; }
+.empty-state p { font-size: 15px; margin-top: 8px; }
 
+/* Desktop */
 @media (min-width: 768px) {
-  .header { padding: 16px 24px; }
-  .header h1 { font-size: 1.4em; }
-  .day-cell { min-height: 140px; padding: 6px 8px; }
-  .day-num { font-size: 1.2em; }
-  .person-tag { font-size: 0.72em; }
-  .section-label { font-size: 0.6em; }
-  .day-event { font-size: 0.7em; }
+  .day-cell { min-height: 140px; padding: 8px; }
+  .day-num { font-size: 18px; width: 32px; height: 32px; }
+  .person-tag { font-size: 12px; padding: 2px 8px; }
+  .day-event { font-size: 12px; }
+  .navbar { padding: 14px 24px; }
+  .navbar-title { font-size: 20px; }
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>シフトカレンダー</h1>
+<nav class="navbar">
+  <span class="navbar-title">シフトカレンダー</span>
   <select class="month-select" id="monthSelect">
     <option value="">読み込み中...</option>
   </select>
-</div>
+</nav>
 
 <div class="legend">
-  <div class="legend-item"><span class="legend-dot" style="background:#fff3e0;border:1px solid #ffcc80"></span>遅番・中番</div>
-  <div class="legend-item"><span class="legend-dot" style="background:#fce4ec;border:1px solid #ef9a9a"></span>休み・有給</div>
-  <div class="legend-item"><span class="legend-dot" style="background:#f3e5f5;border:1px solid #ce93d8"></span>土曜</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--late-fg)"></span>遅番</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--off-fg)"></span>休み</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--sat-fg)"></span>土曜</div>
 </div>
 
 <div class="dow-row">
@@ -149,13 +213,12 @@ function buildCalendar(data) {
     return;
   }
   let html = '';
-  // startDow: Mon=0..Sun=6, skip Sunday columns
-  const startCol = data.startDow >= 6 ? 0 : data.startDow; // Sun wraps to 0 empty cells
+  const startCol = data.startDow >= 6 ? 0 : data.startDow;
   for (let i = 0; i < startCol; i++) html += '<div class="day-cell empty"></div>';
 
   for (let d = 1; d <= data.daysInMonth; d++) {
     const dowIdx = (data.startDow + d - 1) % 7;
-    if (dowIdx === 6) continue; // skip Sunday
+    if (dowIdx === 6) continue;
     const idx = data.days.indexOf(d);
     const bgClass = dowIdx === 5 ? 'sat-bg' : '';
     const ev = idx >= 0 ? data.events[idx] : '';
@@ -172,7 +235,7 @@ function buildCalendar(data) {
     }
 
     html += `<div class="day-cell ${bgClass}">`;
-    html += `<div class="day-num-row"><span class="day-num">${d}</span></div>`;
+    html += `<span class="day-num">${d}</span>`;
     if (ev) html += `<div class="day-event">${ev}</div>`;
     html += '<div class="day-content">';
 
@@ -188,7 +251,6 @@ function buildCalendar(data) {
     html += '</div></div>';
   }
 
-  // Fill remaining cells in last row (6-column grid)
   const cells = document.createElement('div');
   cells.innerHTML = html;
   const count = cells.querySelectorAll('.day-cell').length;
@@ -216,7 +278,6 @@ document.getElementById('monthSelect').addEventListener('change', e => {
   if (e.target.value) switchMonth(e.target.value);
 });
 
-// Init
 (async function() {
   try {
     const res = await fetch('data/months.json');
@@ -229,8 +290,6 @@ document.getElementById('monthSelect').addEventListener('change', e => {
       return;
     }
     sel.innerHTML = keys.map(k => `<option value="${k}">${months[k]}</option>`).join('');
-
-    // Default to latest month
     const latest = keys[keys.length - 1];
     sel.value = latest;
     switchMonth(latest);
