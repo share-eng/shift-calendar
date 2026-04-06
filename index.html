@@ -64,9 +64,7 @@ body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; 
 .day-event {
   font-size: 0.6em; color: #e65100; font-weight: 600;
   background: #fff3e0; padding: 1px 4px; border-radius: 3px;
-  overflow: hidden; text-overflow: ellipsis;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  line-height: 1.3;
+  line-height: 1.3; word-break: break-all;
 }
 
 .day-content { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
@@ -174,9 +172,9 @@ function buildCalendar(data) {
     }
 
     html += `<div class="day-cell ${bgClass}">`;
-    html += `<div class="day-num-row"><span class="day-num">${d}</span>`;
-    if (ev) html += `<span class="day-event">${ev}</span>`;
-    html += '</div><div class="day-content">';
+    html += `<div class="day-num-row"><span class="day-num">${d}</span></div>`;
+    if (ev) html += `<div class="day-event">${ev}</div>`;
+    html += '<div class="day-content">';
 
     if (late.length) {
       html += '<div class="section-label">遅番</div>';
