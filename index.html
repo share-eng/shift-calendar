@@ -177,15 +177,12 @@ function buildCalendar(data) {
     html += '<div class="day-content">';
 
     if (late.length) {
-      html += '<div class="section-label">遅番</div>';
       late.forEach(p => { html += `<span class="person-tag tag-late">${p.pattern} ${p.name}</span>`; });
     }
     if (sat.length) {
-      html += '<div class="section-label">土曜</div>';
       sat.forEach(p => { html += `<span class="person-tag tag-sat">${p.pattern} ${p.name}</span>`; });
     }
     if (off.length) {
-      html += '<div class="section-label">休み</div>';
       off.forEach(p => { html += `<span class="person-tag tag-off">${p.pattern} ${p.name}</span>`; });
     }
     html += '</div></div>';
