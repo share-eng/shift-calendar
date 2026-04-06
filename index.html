@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シフトカレンダー</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; }
+
+.header {
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 1.2em; font-weight: 600; }
+
+.month-select {
+  padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15); color: white; font-size: 0.95em; cursor: pointer;
+}
+.month-select option { color: #333; background: white; }
+
+.legend {
+  display: flex; gap: 10px; font-size: 0.75em; padding: 6px 16px;
+  background: white; border-bottom: 1px solid #e0e0e0;
+}
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+.dow-row {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  background: #f8f9fa; border-bottom: 2px solid #dee2e6;
+}
+.dow-cell {
+  text-align: center; padding: 8px 0; font-weight: 700; font-size: 0.85em; color: #555;
+}
+.dow-cell.sat { color: #1976D2; }
+.dow-cell.sun { color: #d32f2f; }
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 1px; background: #dee2e6; padding: 1px;
+}
+
+.day-cell {
+  background: white; min-height: 120px; padding: 4px 5px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.day-cell.empty { background: #f5f5f5; min-height: 40px; }
+.day-cell.sat-bg { background: #f0f4ff; }
+.day-cell.sun-bg { background: #fff5f5; }
+
+.day-num-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 2px; gap: 2px;
+}
+.day-num {
+  font-size: 1.1em; font-weight: 800; min-width: 24px;
+  text-align: center; flex-shrink: 0;
+}
+.day-cell.sat-bg .day-num { color: #1976D2; }
+.day-cell.sun-bg .day-num { color: #d32f2f; }
+
+.day-event {
+  font-size: 0.6em; color: #e65100; font-weight: 600;
+  background: #fff3e0; padding: 1px 4px; border-radius: 3px;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+
+.day-content { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
+
+.section-label {
+  font-size: 0.55em; font-weight: 700; color: #aaa; letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.person-tag {
+  display: inline-block; padding: 0px 4px; border-radius: 3px;
+  font-size: 0.65em; font-weight: 500; line-height: 1.6; white-space: nowrap;
+}
+
+.tag-late { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+.tag-off { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
+.tag-sat { background: #f3e5f5; color: #6a1b9a; border: 1px solid #ce93d8; }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; color: #999; grid-column: 1 / -1;
+}
+.empty-state p { font-size: 1em; margin-top: 12px; }
+
+@media (min-width: 768px) {
+  .header { padding: 16px 24px; }
+  .header h1 { font-size: 1.4em; }
+  .day-cell { min-height: 140px; padding: 6px 8px; }
+  .day-num { font-size: 1.2em; }
+  .person-tag { font-size: 0.72em; }
+  .section-label { font-size: 0.6em; }
+  .day-event { font-size: 0.7em; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>シフトカレンダー</h1>
+  <select class="month-select" id="monthSelect">
+    <option value="">読み込み中...</option>
+  </select>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:#fff3e0;border:1px solid #ffcc80"></span>遅番・中番</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#fce4ec;border:1px solid #ef9a9a"></span>休み・有給</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#f3e5f5;border:1px solid #ce93d8"></span>土曜</div>
+</div>
+
+<div class="dow-row">
+  <div class="dow-cell">月</div><div class="dow-cell">火</div><div class="dow-cell">水</div>
+  <div class="dow-cell">木</div><div class="dow-cell">金</div><div class="dow-cell sat">土</div>
+  <div class="dow-cell sun">日</div>
+</div>
+
+<div id="calGrid" class="cal-grid">
+  <div class="empty-state"><p>読み込み中...</p></div>
+</div>
+
+<script>
+const cache = {};
+let currentMonth = '';
+
+function isLate(shift) {
+  const p = shift.split(' / ')[0];
+  return /遅|^中[12]F/.test(p);
+}
+function isOff(shift) {
+  const p = shift.split(' / ')[0];
+  return /休/.test(p) || p === '有給';
+}
+function isSat(shift) {
+  const p = shift.split(' / ')[0];
+  return p.startsWith('土');
+}
+function pat(shift) { return shift.split(' / ')[0]; }
+
+function buildCalendar(data) {
+  const grid = document.getElementById('calGrid');
+  if (!data) {
+    grid.innerHTML = '<div class="empty-state"><p>データがありません</p></div>';
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < data.startDow; i++) html += '<div class="day-cell empty"></div>';
+
+  for (let d = 1; d <= data.daysInMonth; d++) {
+    const idx = data.days.indexOf(d);
+    const dowIdx = (data.startDow + d - 1) % 7;
+    const bgClass = dowIdx === 6 ? 'sun-bg' : dowIdx === 5 ? 'sat-bg' : '';
+    const ev = idx >= 0 ? data.events[idx] : '';
+
+    const late = [], off = [], sat = [];
+    if (idx >= 0) {
+      data.staff.forEach(p => {
+        const s = p.shifts[String(d)];
+        if (!s) return;
+        if (isLate(s)) late.push({ name: p.name, pattern: pat(s) });
+        if (isOff(s)) off.push({ name: p.name, pattern: pat(s) });
+        if (isSat(s)) sat.push({ name: p.name, pattern: pat(s) });
+      });
+    }
+
+    html += `<div class="day-cell ${bgClass}">`;
+    html += `<div class="day-num-row"><span class="day-num">${d}</span>`;
+    if (ev) html += `<span class="day-event">${ev}</span>`;
+    html += '</div><div class="day-content">';
+
+    if (late.length) {
+      html += '<div class="section-label">遅番</div>';
+      late.forEach(p => { html += `<span class="person-tag tag-late">${p.pattern} ${p.name}</span>`; });
+    }
+    if (sat.length) {
+      html += '<div class="section-label">土曜</div>';
+      sat.forEach(p => { html += `<span class="person-tag tag-sat">${p.pattern} ${p.name}</span>`; });
+    }
+    if (off.length) {
+      html += '<div class="section-label">休み</div>';
+      off.forEach(p => { html += `<span class="person-tag tag-off">${p.pattern} ${p.name}</span>`; });
+    }
+    html += '</div></div>';
+  }
+
+  const total = data.startDow + data.daysInMonth;
+  for (let i = 0; i < (7 - total % 7) % 7; i++) html += '<div class="day-cell empty"></div>';
+  grid.innerHTML = html;
+}
+
+async function loadMonth(key) {
+  if (cache[key]) return cache[key];
+  const res = await fetch(`data/${key}.json`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  cache[key] = data;
+  return data;
+}
+
+async function switchMonth(key) {
+  currentMonth = key;
+  const data = await loadMonth(key);
+  buildCalendar(data);
+  if (data) document.title = `シフトカレンダー ${data.year}年${data.month}月`;
+}
+
+document.getElementById('monthSelect').addEventListener('change', e => {
+  if (e.target.value) switchMonth(e.target.value);
+});
+
+// Init
+(async function() {
+  try {
+    const res = await fetch('data/months.json');
+    const months = await res.json();
+    const sel = document.getElementById('monthSelect');
+    const keys = Object.keys(months).sort();
+    if (keys.length === 0) {
+      sel.innerHTML = '<option>データなし</option>';
+      document.getElementById('calGrid').innerHTML = '<div class="empty-state"><p>データがありません</p></div>';
+      return;
+    }
+    sel.innerHTML = keys.map(k => `<option value="${k}">${months[k]}</option>`).join('');
+
+    // Default to latest month
+    const latest = keys[keys.length - 1];
+    sel.value = latest;
+    switchMonth(latest);
+  } catch(e) {
+    document.getElementById('monthSelect').innerHTML = '<option>読み込みエラー</option>';
+    document.getElementById('calGrid').innerHTML = '<div class="empty-state"><p>data/months.json が見つかりません。<br>convert.py を実行してください。</p></div>';
+  }
+})();
+</script>
+</body>
+</html>
