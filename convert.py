@@ -106,8 +106,7 @@ def main():
     if len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        files = sorted(glob.glob(str(SCRIPT_DIR / "シフト管理*.xlsx"))) + \
-                sorted(glob.glob(str(Path.home() / "Downloads" / "シフト管理*.xlsx")))
+        files = sorted(glob.glob(str(Path.home() / "Downloads" / "シフト管理*.xlsx")))
 
     if not files:
         print("対象ファイルが見つかりません。")
