@@ -191,6 +191,7 @@ body {
 <script>
 const cache = {};
 let currentMonth = '';
+const nocache = '?v=' + Date.now();
 
 function isLate(shift) {
   const p = shift.split(' / ')[0];
@@ -260,7 +261,7 @@ function buildCalendar(data) {
 
 async function loadMonth(key) {
   if (cache[key]) return cache[key];
-  const res = await fetch(`data/${key}.json`);
+  const res = await fetch(`data/${key}.json` + nocache);
   if (!res.ok) return null;
   const data = await res.json();
   cache[key] = data;
@@ -280,7 +281,7 @@ document.getElementById('monthSelect').addEventListener('change', e => {
 
 (async function() {
   try {
-    const res = await fetch('data/months.json');
+    const res = await fetch('data/months.json' + nocache);
     const months = await res.json();
     const sel = document.getElementById('monthSelect');
     const keys = Object.keys(months).sort();
