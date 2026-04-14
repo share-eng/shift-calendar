@@ -106,7 +106,9 @@ def main():
     if len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        files = sorted(glob.glob(str(Path.home() / "Downloads" / "シフト管理*.xlsx")))
+        # 「シフト管理2026年04月度.xlsx」形式のみ対象（重複番号付きは除外）
+        all_files = sorted(glob.glob(str(Path.home() / "Downloads" / "シフト管理*年*月度.xlsx")))
+        files = [f for f in all_files if "(" not in f]
 
     if not files:
         print("対象ファイルが見つかりません。")
