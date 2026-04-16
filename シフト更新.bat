@@ -1,44 +1,44 @@
 @echo off
-chcp 65001 >nul 2>nul
+
 cd /d "%~dp0"
 
 echo.
 echo ========================================
-echo   シフトカレンダー更新ツール
+echo   Shift Calendar Update
 echo ========================================
 echo.
 
 if "%~1" neq "" (
-    echo 指定ファイルを変換します...
+    echo Converting specified file...
     python convert.py %*
 ) else (
-    echo Downloadsフォルダから自動検出します...
+    echo Auto-detecting from Downloads...
     python convert.py
 )
 
 if %errorlevel% neq 0 (
     echo.
-    echo [エラー] 変換に失敗しました。
+    echo [ERROR] Convert failed.
     pause
     exit /b 1
 )
 
 echo.
-echo GitHubにアップロードしています...
+echo Uploading to GitHub...
 git add data\
-git commit -m "シフトデータ更新"
+git commit -m "update shift data"
 git push
 
 if %errorlevel% neq 0 (
     echo.
-    echo [エラー] GitHubへのアップロードに失敗しました。
+    echo [ERROR] Push failed.
     pause
     exit /b 1
 )
 
 echo.
 echo ========================================
-echo   完了！1分ほどでスマホに反映されます
+echo   Done!
 echo   https://share-eng.github.io/shift-calendar/
 echo ========================================
 echo.
